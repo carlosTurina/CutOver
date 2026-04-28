@@ -241,6 +241,7 @@ const phases = [
         tasks: [
           { id:'pre1', name:'Confirmar data e janela de corte com o cliente BEP', detail:'Definir horário de início, duração estimada (previsto: 3–5h) e lista de participantes do cutover.', tags:['val'] },
           { id:'pre2', name:'Confirmar nome do banco de PRODUÇÃO no HANA', detail:'Este nome substitui SBO_BEP_HOM em: SP_INSERT_ALFA_LOG, parâmetro schema de todos os 7 fluxos e consultas das @Tables.', tags:['sql','risk'] },
+          { id:'pre2b', name:'Confirmar com consultor funcional o destino dos UDFs T0/T3/T4 nos Docs de Marketing', detail:'Os campos U_ALFA_ThundersModifyAt e U_ALFA_ThundersOrderId estão vinculados a T0 (cabeçalho), T3 e T4 (linhas). Confirmar se T0=OINV/ORDR, T3=RDR1/INV1, T4=outra linha — antes de criar os UDFs no PROD. Tipo: alfanumérico em todos.', tags:['db','risk'] },
           { id:'pre3', name:'Levantar todos os valores das variáveis de PROD com o cliente', detail:'Coletar: client_id PROD, client_secret PROD, CustomerGroup PROD, SupplierGroup PROD. Ver tabela na Fase 2.', tags:['env','risk'] },
         ]
       },
@@ -289,10 +290,73 @@ const phases = [
       {
         label: '@Tables de usuário',
         tasks: [
-          { id:'db2', name:'Criar @ALFA_LOGS_THUNDERS no banco PROD', detail:'PRIORIDADE: esta tabela deve existir ANTES do deploy da SP_INSERT_ALFA_LOG. Colunas: Code, Name, U_ALFA_DESCRICAO, U_ALFA_DATA, U_ALFA_DOCUMENTO, U_ALFA_TIPO.', tags:['db','risk'] },
-          { id:'db3', name:'Criar @ALFA_THUNDERS_SETUP no banco PROD', detail:'Tabela de configurações do Thunders. Replicar estrutura e dados de referência do HOM.', tags:['db'] },
-          { id:'db4', name:'Criar @ALFA_THUNDERS_ITENS no banco PROD', detail:'Tabela de itens do Thunders. Replicar estrutura do HOM.', tags:['db'] },
-          { id:'db5', name:'Criar @ALFA_OPERACAO_CFOP no banco PROD', detail:'Tabela de operações CFOP. Replicar estrutura e dados de referência do HOM.', tags:['db'] },
+          {
+            id:'db2',
+            name:'Criar @ALFA_LOGS_THUNDERS no banco PROD — PRIORIDADE MÁXIMA',
+            detail:'Deve existir ANTES do deploy da SP_INSERT_ALFA_LOG. Atenção: U_ALFA_DATA é NVARCHAR(254) na tabela, mas a procedure declara v_Data como TIMESTAMP e usa TO_TIMESTAMP(). Validar se o HANA realiza o cast implícito ou se é necessário converter para string antes do INSERT.',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>#</th><th>Campo</th><th>Tipo SQL</th><th>Tam.</th><th>Key</th><th>Not Null</th></tr>
+              <tr><td>1</td><td><span class="task-code">Code</span></td><td>INTEGER</td><td>—</td><td>X(1)</td><td>X</td></tr>
+              <tr><td>2</td><td><span class="task-code">Name</span></td><td>NVARCHAR</td><td>100</td><td>—</td><td>—</td></tr>
+              <tr><td>3</td><td><span class="task-code">U_ALFA_DESCRICAO</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+              <tr><td>4</td><td><span class="task-code">U_ALFA_DOCUMENTO</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+              <tr><td>5</td><td><span class="task-code">U_ALFA_TIPO</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+              <tr><td>6</td><td><span class="task-code">U_ALFA_DATA</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+            </table>
+            <div style="margin-top:8px;padding:8px 10px;border-radius:6px;border-left:3px solid var(--red);background:var(--red-bg);font-size:12px;color:var(--red)">
+              <strong>Risco:</strong> SP_INSERT_ALFA_LOG insere um valor TIMESTAMP em U_ALFA_DATA (NVARCHAR 254). Testar o INSERT no PROD antes de declarar a fase concluída.
+            </div></div>`,
+            tags:['db','risk']
+          },
+          {
+            id:'db3',
+            name:'Criar @ALFA_THUNDERS_SETUP no banco PROD',
+            detail:'Tabela de configurações do Thunders. Lida pelo conector "Get Config / GetThundersConfig" no fluxo Conciliation. Após criar, replicar os dados de configuração do HOM (filtros de data, grupos, cenário).',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>#</th><th>Campo</th><th>Tipo SQL</th><th>Tam.</th><th>Key</th><th>Not Null</th></tr>
+              <tr><td>1</td><td><span class="task-code">Code</span></td><td>NVARCHAR</td><td>50</td><td>X(1)</td><td>X</td></tr>
+              <tr><td>2</td><td><span class="task-code">Name</span></td><td>NVARCHAR</td><td>100</td><td>—</td><td>X</td></tr>
+              <tr><td>3</td><td><span class="task-code">U_Due_Start_Date</span></td><td>TIMESTAMP</td><td>—</td><td>—</td><td>—</td></tr>
+              <tr><td>4</td><td><span class="task-code">U_Due_End_Date</span></td><td>TIMESTAMP</td><td>—</td><td>—</td><td>—</td></tr>
+              <tr><td>5</td><td><span class="task-code">U_Sap_Customer_Group</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+              <tr><td>6</td><td><span class="task-code">U_Sap_Supplier_Group</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+              <tr><td>7</td><td><span class="task-code">U_Scenario_Thunders</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+              <tr><td>8</td><td><span class="task-code">U_IsValid</span></td><td>NVARCHAR</td><td>1</td><td>—</td><td>—</td></tr>
+            </table></div>`,
+            tags:['db']
+          },
+          {
+            id:'db4',
+            name:'Criar @ALFA_THUNDERS_ITENS no banco PROD',
+            detail:'Tabela de itens do Thunders. 20 colunas — inclui colunas padrão do SAP B1 + 4 UDFs de mapeamento de itens.',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>#</th><th>Campo</th><th>Tipo SQL</th><th>Tam.</th><th>Key</th><th>Not Null</th></tr>
+              <tr><td>1</td><td><span class="task-code">Code</span></td><td>NVARCHAR</td><td>50</td><td>X(1)</td><td>X</td></tr>
+              <tr><td>2</td><td><span class="task-code">Name</span></td><td>NVARCHAR</td><td>100</td><td>—</td><td>—</td></tr>
+              <tr><td>3–16</td><td><span class="task-code">DocEntry, Canceled, Object, LogInst, UserSign, Transfered, CreateDate, CreateTime, UpdateDate, UpdateTime, DataSource, NaturalPer, DPPStatus, EncryptIV</span></td><td colspan="4">Colunas padrão SAP — replicar do HOM</td></tr>
+              <tr><td>17</td><td><span class="task-code">U_ItemCodeThunders</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+              <tr><td>18</td><td><span class="task-code">U_ItemDescThunders</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+              <tr><td>19</td><td><span class="task-code">U_ItemCodeSap</span></td><td>NVARCHAR</td><td>50</td><td>—</td><td>—</td></tr>
+              <tr><td>20</td><td><span class="task-code">U_ItemNameSap</span></td><td>NVARCHAR</td><td>254</td><td>—</td><td>—</td></tr>
+            </table></div>`,
+            tags:['db']
+          },
+          {
+            id:'db5',
+            name:'Criar @ALFA_OPERACAO_CFOP no banco PROD',
+            detail:'Tabela de operações CFOP. 20 colunas — inclui colunas padrão do SAP B1 + 4 UDFs de operação fiscal. Replicar os dados de referência do HOM após criar.',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>#</th><th>Campo</th><th>Tipo SQL</th><th>Tam.</th><th>Key</th><th>Not Null</th></tr>
+              <tr><td>1</td><td><span class="task-code">Code</span></td><td>NVARCHAR</td><td>50</td><td>X(1)</td><td>X</td></tr>
+              <tr><td>2</td><td><span class="task-code">Name</span></td><td>NVARCHAR</td><td>100</td><td>—</td><td>—</td></tr>
+              <tr><td>3–16</td><td><span class="task-code">DocEntry, Canceled, Object, LogInst, UserSign, Transfered, CreateDate, CreateTime, UpdateDate, UpdateTime, DataSource, NaturalPer, DPPStatus, EncryptIV</span></td><td colspan="4">Colunas padrão SAP — replicar do HOM</td></tr>
+              <tr><td>17</td><td><span class="task-code">U_ALFA_GRUPO</span></td><td>SMALLINT</td><td>—</td><td>—</td><td>—</td></tr>
+              <tr><td>18</td><td><span class="task-code">U_ALFA_Grupo_Desc</span></td><td>NVARCHAR</td><td>20</td><td>—</td><td>—</td></tr>
+              <tr><td>19</td><td><span class="task-code">U_ALFA_CFOP</span></td><td>NVARCHAR</td><td>6</td><td>—</td><td>—</td></tr>
+              <tr><td>20</td><td><span class="task-code">U_ALFA_Estado</span></td><td>NVARCHAR</td><td>3</td><td>—</td><td>—</td></tr>
+            </table></div>`,
+            tags:['db']
+          },
         ]
       },
       {
