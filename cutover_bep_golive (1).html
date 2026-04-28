@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cutover Plan — Go Live BEP · Skyone Integration</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --bg2: #f3f2f0;
+    --bg3: #e8e6e2;
+    --border: #dbd9d4;
+    --border2: #c9c6c0;
+    --text: #1c1b19;
+    --text2: #5c5a55;
+    --text3: #9a9790;
+    --phase-card: #ffffff;
+    --task-hover: var(--bg);
+    --purple: #534AB7; --purple-bg: #EEEDFE; --purple-border: #AFA9EC;
+    --teal: #0F6E56; --teal-bg: #E1F5EE; --teal-border: #5DCAA5;
+    --amber: #854F0B; --amber-bg: #FAEEDA; --amber-border: #EF9F27;
+    --blue: #185FA5; --blue-bg: #E6F1FB; --blue-border: #85B7EB;
+    --red: #A32D2D; --red-bg: #FCEBEB; --red-border: #F09595;
+    --green: #3B6D11; --green-bg: #EAF3DE; --green-border: #97C459;
+    --coral: #993C1D; --coral-bg: #FAECE7; --coral-border: #F0997B;
+    --gray: #5F5E5A; --gray-bg: #F1EFE8; --gray-border: #B4B2A9;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  [data-theme="dark"] {
+    --bg: #111110;
+    --bg2: #1a1a18;
+    --bg3: #242422;
+    --border: #2e2e2b;
+    --border2: #3d3d39;
+    --text: #e8e6e1;
+    --text2: #9a9790;
+    --text3: #5c5a55;
+    --phase-card: #161615;
+    --task-hover: #1a1a18;
+    --purple: #AFA9EC; --purple-bg: #26215C; --purple-border: #3C3489;
+    --teal: #5DCAA5; --teal-bg: #04342C; --teal-border: #0F6E56;
+    --amber: #FAC775; --amber-bg: #412402; --amber-border: #854F0B;
+    --blue: #85B7EB; --blue-bg: #042C53; --blue-border: #185FA5;
+    --red: #F09595; --red-bg: #501313; --red-border: #A32D2D;
+    --green: #97C459; --green-bg: #173404; --green-border: #3B6D11;
+    --coral: #F0997B; --coral-bg: #4A1B0C; --coral-border: #993C1D;
+    --gray: #B4B2A9; --gray-bg: #2C2C2A; --gray-border: #5F5E5A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+  .page { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* HEADER */
+  .header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .header h1 { font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+  .header p { color: var(--text2); font-size: 13px; margin-top: 4px; }
+  .header-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; border: 1px solid; }
+  .badge-hom { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border); }
+  .badge-prod { background: var(--teal-bg); color: var(--teal); border-color: var(--teal-border); }
+  .badge-may { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-border); }
+  .reset-btn { font-size: 12px; color: var(--text3); background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 12px; cursor: pointer; }
+  .reset-btn:hover { border-color: var(--border2); color: var(--text2); }
+
+  /* METRICS */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: var(--bg2); border-radius: var(--radius); padding: 12px 16px; border: 1px solid var(--border); }
+  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+  .metric-value { font-size: 24px; font-weight: 600; color: var(--text); margin-top: 2px; }
+  .metric-value.c-teal { color: var(--teal); }
+  .metric-value.c-amber { color: var(--amber); }
+  .metric-value.c-blue { color: var(--blue); }
+
+  /* PROGRESS BAR GLOBAL */
+  .global-progress { margin-bottom: 1.5rem; }
+  .gp-bar { height: 6px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+  .gp-fill { height: 100%; background: var(--teal); border-radius: 99px; transition: width 0.4s ease; }
+  .gp-label { font-size: 12px; color: var(--text3); margin-top: 6px; }
+
+  /* ALERT */
+  .alert { padding: 10px 14px; border-radius: var(--radius); margin-bottom: 1rem; font-size: 13px; border-left: 3px solid; }
+  .alert-amber { background: var(--amber-bg); color: var(--amber); border-color: var(--amber); }
+  .alert-red { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+  .alert-blue { background: var(--blue-bg); color: var(--blue); border-color: var(--blue); }
+  .alert strong { font-weight: 600; }
+
+  /* PHASE */
+  .phase { border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; background: var(--phase-card); }
+  .phase-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: background 0.15s; }
+  .phase-header:hover { background: var(--bg2); }
+  .phase-header.open { border-bottom-color: var(--border); }
+  .phase-num { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .phase-info { flex: 1; }
+  .phase-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .phase-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .phase-right { display: flex; align-items: center; gap: 12px; }
+  .phase-stat { font-size: 12px; color: var(--text3); min-width: 50px; text-align: right; }
+  .phase-pbar { width: 80px; height: 4px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+  .phase-pfill { height: 100%; border-radius: 99px; transition: width 0.3s ease; }
+  .phase-chevron { color: var(--text3); font-size: 12px; transition: transform 0.2s; }
+  .phase-chevron.open { transform: rotate(180deg); }
+
+  /* PHASE BODY */
+  .phase-body { display: none; padding: 0; }
+  .phase-body.open { display: block; }
+
+  /* SECTION LABEL */
+  .section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); padding: 12px 16px 4px; }
+
+  /* TASK */
+  .task { display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--bg2); transition: background 0.1s; }
+  .task:last-child { border-bottom: none; }
+  .task:hover { background: var(--task-hover); }
+  .task.done { background: var(--bg2); }
+  .task-cb { margin-top: 2px; flex-shrink: 0; width: 15px; height: 15px; cursor: pointer; accent-color: var(--teal); }
+  .task-body { flex: 1; min-width: 0; }
+  .task-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .task-name.struck { text-decoration: line-through; color: var(--text3); font-weight: 400; }
+  .task-detail { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .task-code { font-family: var(--mono); font-size: 11px; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; color: var(--text); display: inline; }
+  .task-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+  .tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid; letter-spacing: 0.02em; }
+  .tag-sql { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-border); }
+  .tag-env { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border); }
+  .tag-flow { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+  .tag-db { background: var(--purple-bg); color: var(--purple); border-color: var(--purple-border); }
+  .tag-val { background: var(--teal-bg); color: var(--teal); border-color: var(--teal-border); }
+  .tag-risk { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+  .tag-done { background: var(--gray-bg); color: var(--gray); border-color: var(--gray-border); }
+  .tag-trigger { background: var(--coral-bg); color: var(--coral); border-color: var(--coral-border); }
+
+  /* ENV TABLE */
+  .env-table { width: 100%; border-collapse: collapse; margin: 8px 16px; width: calc(100% - 32px); font-size: 12px; }
+  .env-table th { text-align: left; color: var(--text3); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .env-table td { padding: 7px 8px; border-bottom: 1px solid var(--bg2); vertical-align: top; }
+  .env-table tr:last-child td { border-bottom: none; }
+  .env-table .param-name { font-family: var(--mono); font-size: 11px; color: var(--text); font-weight: 500; }
+  .env-table .hom-val { font-family: var(--mono); font-size: 11px; color: var(--amber); background: var(--amber-bg); padding: 1px 5px; border-radius: 3px; }
+  .env-table .prod-val { font-family: var(--mono); font-size: 11px; color: var(--teal); background: var(--teal-bg); padding: 1px 5px; border-radius: 3px; }
+  .env-table .note { font-size: 11px; color: var(--text3); }
+
+  /* CONNECTOR TABLE */
+  .conn-table { width: calc(100% - 32px); margin: 4px 16px 12px; border-collapse: collapse; font-size: 12px; }
+  .conn-table th { text-align: left; color: var(--text3); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  .conn-table td { padding: 6px 8px; border-bottom: 1px solid var(--bg2); vertical-align: top; }
+  .conn-table tr:last-child td { border-bottom: none; }
+  .conn-type { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px; }
+  .conn-type.rest { background: var(--blue-bg); color: var(--blue); }
+  .conn-type.db { background: var(--purple-bg); color: var(--purple); }
+
+  /* FOOTER */
+  .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text3); }
+  .footer-saved { font-size: 11px; color: var(--teal); }
+
+  @media (max-width: 600px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .phase-pbar { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <h1>Plano de Cutover — Go Live BEP</h1>
+        <p>Integração Skyone · Thunders ↔ SAP Business One · Migração HOM → PROD</p>
+        <div class="header-badges">
+          <span class="badge badge-hom">HOM: SBO_BEP_HOM</span>
+          <span class="badge badge-prod">PROD: a confirmar</span>
+          <span class="badge badge-may">Go Live: início de maio/2026</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+        <button class="reset-btn" id="theme-btn" onclick="toggleTheme()" title="Alternar modo escuro/claro">☾ Modo escuro</button>
+        <button class="reset-btn" onclick="resetAll()">Resetar progresso</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Total</div>
+      <div class="metric-value c-blue" id="m-total">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Concluídas</div>
+      <div class="metric-value c-teal" id="m-done">0</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Pendentes</div>
+      <div class="metric-value c-amber" id="m-pend">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Progresso</div>
+      <div class="metric-value" id="m-pct">0%</div>
+    </div>
+  </div>
+
+  <div class="global-progress">
+    <div class="gp-bar"><div class="gp-fill" id="gp-fill" style="width:0%"></div></div>
+    <div class="gp-label" id="gp-label">Nenhuma tarefa concluída</div>
+  </div>
+
+  <div class="alert alert-amber">
+    <strong>Data não confirmada.</strong> Distribuir este plano e alinhar janela de indisponibilidade com o cliente BEP com no mínimo 5 dias de antecedência.
+  </div>
+  <div class="alert alert-red">
+    <strong>Bloqueador crítico:</strong> Confirmar o nome do banco PROD antes de qualquer ação. Toda a Fase 1 e o parâmetro <code>schema</code> dependem disso.
+  </div>
+
+  <div id="phases-container"></div>
+
+  <div class="footer">
+    <span>BEP · Skyone · Thunders Integration · 2026</span>
+    <span class="footer-saved" id="save-indicator"></span>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'cutover_bep_2026';
+
+const phases = [
+  {
+    id: 'pre',
+    title: 'Pré-Cutover',
+    sub: 'D-5 até D-1 · Preparação e alinhamentos',
+    color: '#185FA5',
+    bg: '#B5D4F4',
+    sections: [
+      {
+        label: 'Alinhamento',
+        tasks: [
+          { id:'pre1', name:'Confirmar data e janela de corte com o cliente BEP', detail:'Definir horário de início, duração estimada (previsto: 3–5h) e lista de participantes do cutover.', tags:['val'] },
+          { id:'pre2', name:'Confirmar nome do banco de PRODUÇÃO no HANA', detail:'Este nome substitui SBO_BEP_HOM em: SP_INSERT_ALFA_LOG, parâmetro schema de todos os 7 fluxos e consultas das @Tables.', tags:['sql','risk'] },
+          { id:'pre3', name:'Levantar todos os valores das variáveis de PROD com o cliente', detail:'Coletar: client_id PROD, client_secret PROD, CustomerGroup PROD, SupplierGroup PROD. Ver tabela na Fase 2.', tags:['env','risk'] },
+        ]
+      },
+      {
+        label: 'Preparação técnica',
+        tasks: [
+          { id:'pre4', name:'Fazer backup completo do ambiente HOM', detail:'Exportar snapshots do banco HANA HOM, IACs dos 7 fluxos e variáveis de ambiente do Skyone.', tags:['risk'] },
+          { id:'pre5', name:'Validar acessos ao ambiente PROD (SAP B1 + HANA + Skyone)', detail:'Confirmar permissões DBA no HANA PROD, acesso ao Service Layer SAP B1 PROD e acesso à conta Skyone de produção.', tags:['val'] },
+          { id:'pre6', name:'Preparar script SP_INSERT_ALFA_LOG com nome do banco PROD', detail:'Substituir todas as 3 ocorrências de "SBO_BEP_HOM" pelo nome PROD confirmado no passo pre2.', tags:['sql'] },
+          { id:'pre7', name:'Preparar script FN_REMOVE_SPECIAL_CHARACTER para PROD', detail:'Nenhuma alteração de schema necessária neste objeto — deploy direto. Validar sintaxe HANA PROD.', tags:['sql'] },
+          { id:'pre8', name:'Comunicar janela de indisponibilidade ao cliente BEP', detail:'Enviar comunicado formal com data, horário e impacto esperado. Prever 3–5h sem sincronização Thunders↔SAP.', tags:['risk'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'db',
+    title: 'Fase 1 — Banco de Dados HANA',
+    sub: 'D-Day · Etapa 1 de 4 · Estimativa: ~45 min',
+    color: '#534AB7',
+    bg: '#CECBF6',
+    sections: [
+      {
+        label: 'Campos de usuário (UDFs) — mapeamento concluído',
+        tasks: [
+          {
+            id:'db1',
+            name:'Criar os 8 UDFs em Documentos de Marketing (tipo alfanumérico)',
+            detail:'Mapeamento finalizado. Criar no banco PROD todos os campos abaixo em Documentos de Marketing:',
+            extra: `<div style="margin-top:8px">
+              <table class="conn-table">
+                <tr><th>Campo UDF</th><th>Objeto SAP</th><th>Tipo</th></tr>
+                <tr><td><span class="task-code">U_ALFA_ThundersModifyAt</span></td><td>Docs de Marketing (T0)</td><td>Alfanumérico</td></tr>
+                <tr><td><span class="task-code">U_ALFA_ThundersOrderId</span></td><td>Docs de Marketing (T0)</td><td>Alfanumérico</td></tr>
+                <tr><td><span class="task-code">U_ALFA_ThundersInvoiceCanceled</span></td><td>Docs de Marketing</td><td>Alfanumérico</td></tr>
+                <tr><td><span class="task-code">U_ALFA_ThundersInvoiceId</span></td><td>Docs de Marketing (T4)</td><td>Alfanumérico</td></tr>
+                <tr><td><span class="task-code">U_ALFA_ThundersStatus</span></td><td>Docs de Marketing</td><td>Alfanumérico</td></tr>
+                <tr><td><span class="task-code">U_ALFA_ThundersOrderId</span></td><td>Linhas de doc (T4)</td><td>Alfanumérico</td></tr>
+                <tr><td><span class="task-code">U_ALFA_ThundersOrderId</span></td><td>Linhas de doc (T3)</td><td>Alfanumérico</td></tr>
+              </table>
+            </div>`,
+            tags:['db']
+          },
+        ]
+      },
+      {
+        label: '@Tables de usuário',
+        tasks: [
+          { id:'db2', name:'Criar @ALFA_LOGS_THUNDERS no banco PROD', detail:'PRIORIDADE: esta tabela deve existir ANTES do deploy da SP_INSERT_ALFA_LOG. Colunas: Code, Name, U_ALFA_DESCRICAO, U_ALFA_DATA, U_ALFA_DOCUMENTO, U_ALFA_TIPO.', tags:['db','risk'] },
+          { id:'db3', name:'Criar @ALFA_THUNDERS_SETUP no banco PROD', detail:'Tabela de configurações do Thunders. Replicar estrutura e dados de referência do HOM.', tags:['db'] },
+          { id:'db4', name:'Criar @ALFA_THUNDERS_ITENS no banco PROD', detail:'Tabela de itens do Thunders. Replicar estrutura do HOM.', tags:['db'] },
+          { id:'db5', name:'Criar @ALFA_OPERACAO_CFOP no banco PROD', detail:'Tabela de operações CFOP. Replicar estrutura e dados de referência do HOM.', tags:['db'] },
+        ]
+      },
+      {
+        label: 'Objetos SQL',
+        tasks: [
+          { id:'db6', name:'Deploy de FN_REMOVE_SPECIAL_CHARACTER no PROD', detail:'Nenhuma referência de schema — executar o script sem alterações. Validar: SELECT FN_REMOVE_SPECIAL_CHARACTER(\'Ação Ñoño\') FROM DUMMY; deve retornar "Acao Nono".', tags:['sql'] },
+          { id:'db7', name:'Deploy de SP_INSERT_ALFA_LOG no PROD (com schema PROD)', detail:'Substituir as 3 ocorrências de "SBO_BEP_HOM" pelo nome PROD antes de executar. Dependência: @ALFA_LOGS_THUNDERS deve existir (passo db2).', tags:['sql','risk'] },
+          { id:'db8', name:'Validar objetos criados no PROD', detail:'Executar SELECT em cada @Table. Chamar SP_INSERT_ALFA_LOG com dados de teste e confirmar inserção em @ALFA_LOGS_THUNDERS.', tags:['val'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'env',
+    title: 'Fase 2 — Variáveis de Ambiente (Skyone)',
+    sub: 'D-Day · Etapa 2 de 4 · Estimativa: ~20 min · Aplica-se a todos os 7 fluxos',
+    color: '#854F0B',
+    bg: '#FAC775',
+    sections: [
+      {
+        label: 'Contexto: como as variáveis funcionam nos IACs',
+        tasks: [
+          {
+            id:'env0',
+            name:'Entender o mapeamento: cada parâmetro compartilhado tem um ID fixo no Skyone',
+            detail:'Todos os 7 fluxos referenciam os mesmos parâmetros via ID interno. Ao atualizar o valor no Skyone, todos os fluxos recebem o novo valor simultaneamente.',
+            extra: `<div style="margin-top:8px">
+              <table class="env-table">
+                <tr><th>Parâmetro Skyone</th><th>ID interno IAC</th><th>Valor HOM</th><th>Valor PROD</th><th>Obs</th></tr>
+                <tr><td class="param-name">schema</td><td><span class="task-code">MRSFNqhdxo</span></td><td class="hom-val">SBO_BEP_HOM</td><td class="prod-val">??? (confirmar)</td><td class="note">Crítico — todos os connectors DB</td></tr>
+                <tr><td class="param-name">Thunder_config_client_id</td><td><span class="task-code">0Hj-NTrAvq</span></td><td class="hom-val">bepqa_alfaerp_8Ts3p</td><td class="prod-val">??? (obter com cliente)</td><td class="note">Auth + todos os fluxos com login</td></tr>
+                <tr><td class="param-name">thunders_cliente_type</td><td><span class="task-code">z5Wpy76aGx</span></td><td class="hom-val">vIuX2ldkZRnqw80Q</td><td class="prod-val">??? (obter com cliente)</td><td class="note">Client secret PROD</td></tr>
+                <tr><td class="param-name">thunders_grant_type</td><td><span class="task-code">bnPuFxQLn7</span></td><td class="hom-val">client_credentials</td><td class="prod-val">client_credentials</td><td class="note">Provavelmente igual — confirmar</td></tr>
+                <tr><td class="param-name">costumergroup</td><td><span class="task-code">t4A8d8m4bt</span></td><td class="hom-val">108</td><td class="prod-val">??? (confirmar)</td><td class="note">Grupo de clientes SAP B1 PROD</td></tr>
+                <tr><td class="param-name">supliergroup</td><td><span class="task-code">Ya1PdN9brx</span></td><td class="hom-val">101</td><td class="prod-val">??? (confirmar)</td><td class="note">Grupo de fornecedores SAP B1 PROD</td></tr>
+                <tr><td class="param-name">THUNDERS_AcesserToken</td><td><span class="task-code">byD1Eu-Tpd</span></td><td class="hom-val">JWT HOM (expirado)</td><td class="prod-val">Auto-gerado pelo Auth</td><td class="note">Não setar manualmente — o fluxo Auth regenera</td></tr>
+                <tr><td class="param-name">enviroment</td><td><span class="task-code">FfE6GHdecR</span></td><td class="hom-val">Homologação</td><td class="prod-val">Produção</td><td class="note">Usado em logs — atualizar para clareza</td></tr>
+              </table>
+            </div>`,
+            tags:['env']
+          },
+        ]
+      },
+      {
+        label: 'Atualização das variáveis',
+        tasks: [
+          { id:'env1', name:'Atualizar schema → nome do banco PROD', detail:'Parâmetro ID MRSFNqhdxo. Usado por todos os connectors database dos 7 fluxos via referência dinâmica.', tags:['env','risk'] },
+          { id:'env2', name:'Atualizar Thunder_config_client_id → client_id PROD', detail:'Parâmetro ID 0Hj-NTrAvq. Substituir "bepqa_alfaerp_8Ts3p" pelo client_id de produção fornecido pelo cliente BEP/Thunders.', tags:['env','risk'] },
+          { id:'env3', name:'Atualizar thunders_cliente_type → client_secret PROD', detail:'Parâmetro ID z5Wpy76aGx. Substituir "vIuX2ldkZRnqw80Q" pelo secret de produção.', tags:['env','risk'] },
+          { id:'env4', name:'Confirmar thunders_grant_type (provavelmente igual)', detail:'Parâmetro ID bnPuFxQLn7. Valor atual: client_credentials. Confirmar que PROD usa o mesmo grant type.', tags:['env'] },
+          { id:'env5', name:'Atualizar costumergroup → grupo de clientes PROD', detail:'Parâmetro ID t4A8d8m4bt. Valor HOM: 108. Confirmar o código correto do grupo de clientes no SAP B1 PROD.', tags:['env'] },
+          { id:'env6', name:'Atualizar supliergroup → grupo de fornecedores PROD', detail:'Parâmetro ID Ya1PdN9brx. Valor HOM: 101. Confirmar o código correto do grupo de fornecedores no SAP B1 PROD.', tags:['env'] },
+          { id:'env7', name:'Atualizar enviroment → "Produção"', detail:'Parâmetro ID FfE6GHdecR. Alterar de "Homologação" para "Produção" para identificação correta nos logs.', tags:['env'] },
+          { id:'env8', name:'NÃO atualizar THUNDERS_AcesserToken manualmente', detail:'Este campo (ID byD1Eu-Tpd) é preenchido automaticamente pelo fluxo Auth após a primeira execução em PROD. Não interfira.', tags:['env','done'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'flows',
+    title: 'Fase 3 — Fluxos de Integração (Skyone)',
+    sub: 'D-Day · Etapa 3 de 4 · Estimativa: ~60 min · 6 fluxos com mudanças + 1 sem alteração',
+    color: '#3B6D11',
+    bg: '#C0DD97',
+    sections: [
+      {
+        label: '🔐 Auth — Fluxo base (todos dependem)',
+        tasks: [
+          {
+            id:'fl1',
+            name:'Auth: aplicar mudanças HOM → PROD e validar execução',
+            detail:'Conector: Thunders_Alfa / Login. Usa: Thunder_Config_ClientID + Thunders_Client_Type + Thunders_Grant_Type. Trigger: a cada 2h. Após atualizar as env vars (Fase 2), forçar execução manual e confirmar que access_token PROD é gerado e salvo.',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>Conector</th><th>Tipo</th><th>Parâmetros críticos</th></tr>
+              <tr><td>Thunders_Alfa / Login</td><td><span class="conn-type rest">REST</span></td><td><span class="task-code">client_id</span> <span class="task-code">client_secret</span> <span class="task-code">grant_type</span></td></tr>
+            </table></div>`,
+            tags:['flow','risk','trigger']
+          },
+        ]
+      },
+      {
+        label: '📦 GetItems — Sincronização de itens',
+        tasks: [
+          {
+            id:'fl2',
+            name:'GetItems: aplicar mudanças HOM → PROD',
+            detail:'Conector: GetThundersItems. Dependência: Auth deve estar funcionando (token PROD ativo). Verificar trigger de execução e paginação (RegistrosPorPagina: 2000).',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
+              <tr><td>GetThundersItems</td><td><span class="conn-type rest">REST</span></td><td>Token via THUNDERS_AcesserToken gerado pelo Auth</td></tr>
+            </table></div>`,
+            tags:['flow']
+          },
+        ]
+      },
+      {
+        label: '🏢 Companies → PN — Conversão de empresas',
+        tasks: [
+          {
+            id:'fl3',
+            name:'Companies → PN: aplicar mudanças HOM → PROD',
+            detail:'Trigger: a cada 10 min. 14 connectors. Atenção especial à paginação (limitePagina: 50, startRow/endRow dinâmicos) e ao parâmetro VerificarFluxoAndamento (controle de concorrência).',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
+              <tr><td>Verifica se PN Existe / GetBussinesPartner</td><td><span class="conn-type db">DB</span></td><td>Usa schema PROD via parâmetro</td></tr>
+              <tr><td>Thunders company By Id / GetCompaniesId</td><td><span class="conn-type rest">REST</span></td><td>Busca empresa no Thunders PROD</td></tr>
+              <tr><td>POST.Customer / BusinessPartners.POST</td><td><span class="conn-type rest">REST</span></td><td>Cria PN cliente no SAP B1 PROD</td></tr>
+              <tr><td>POST.Supplier / BusinessPartners.POST</td><td><span class="conn-type rest">REST</span></td><td>Cria PN fornecedor no SAP B1 PROD</td></tr>
+              <tr><td>Contacts by Company ID / GetContatos</td><td><span class="conn-type rest">REST</span></td><td>Busca contatos no Thunders PROD</td></tr>
+            </table></div>`,
+            tags:['flow','trigger']
+          },
+        ]
+      },
+      {
+        label: '📋 Conciliation → Pedido — Conversão de conciliações',
+        tasks: [
+          {
+            id:'fl4',
+            name:'Conciliation → Pedido: aplicar mudanças HOM → PROD',
+            detail:'Trigger: a cada 2 min (fluxo crítico de alta frequência). Cobre Compra/Venda e Serviço. Atenção ao controle de tentativas (Tentativas, TentativasOrder) e ao VerificarFluxoAndamento.',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
+              <tr><td>Get Config / GetThundersConfig</td><td><span class="conn-type db">DB</span></td><td>Lê @ALFA_THUNDERS_SETUP — deve existir em PROD</td></tr>
+              <tr><td>Get Conciliations / GetConciliations</td><td><span class="conn-type rest">REST</span></td><td>Busca conciliações pendentes no Thunders PROD</td></tr>
+              <tr><td>Verifica pedido SAP / GetOrdersByThunderID</td><td><span class="conn-type db">DB</span></td><td>Verifica duplicatas via U_ALFA_ThundersOrderId</td></tr>
+              <tr><td>Orders.POST</td><td><span class="conn-type rest">REST</span></td><td>Cria Pedido de Venda no SAP B1 PROD</td></tr>
+              <tr><td>PurchaseOrders.POST</td><td><span class="conn-type rest">REST</span></td><td>Cria Pedido de Compra no SAP B1 PROD</td></tr>
+            </table></div>`,
+            tags:['flow','risk','trigger']
+          },
+        ]
+      },
+      {
+        label: '🧾 Invoices (In/Out) — Notas fiscais',
+        tasks: [
+          {
+            id:'fl5',
+            name:'Invoices: aplicar mudanças HOM → PROD',
+            detail:'Trigger: a cada 1 min. 13 connectors. Gera e cancela notas no Thunders. Atenção: os connectors de atualização de NF usam o token via variável de fluxo (access_token), não o parâmetro direto.',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
+              <tr><td>Canceled Invoices / GetCanceledInvoices</td><td><span class="conn-type db">DB</span></td><td>Usa schema PROD</td></tr>
+              <tr><td>GetInvoices / GetInvoicesCanceledAndNotCanceled</td><td><span class="conn-type db">DB</span></td><td>Usa schema PROD</td></tr>
+              <tr><td>GetPurchaseInvoices</td><td><span class="conn-type db">DB</span></td><td>Usa schema PROD</td></tr>
+              <tr><td>Cancelar Invoice / Atualizar NF</td><td><span class="conn-type rest">REST</span></td><td>Token: var de fluxo access_token (PROD)</td></tr>
+              <tr><td>Atualização de NF / Atualizar NF</td><td><span class="conn-type rest">REST</span></td><td>Token: var de fluxo access_token (PROD)</td></tr>
+              <tr><td>UpdateInvoiceThundersStatus (×4)</td><td><span class="conn-type db">DB</span></td><td>Grava status em UDFs — gravar em U_ALFA_ThundersInvoiceId</td></tr>
+            </table></div>`,
+            tags:['flow','trigger']
+          },
+        ]
+      },
+      {
+        label: '💳 Payments (V/I) — Pagamentos',
+        tasks: [
+          {
+            id:'fl6',
+            name:'Payments: aplicar mudanças HOM → PROD',
+            detail:'Trigger: a cada 1 min. 7 connectors. Cobre Vendor Payments e Incoming Payments para o Thunders.',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
+              <tr><td>Pagamento / GetIncomingPayments</td><td><span class="conn-type db">DB</span></td><td>Usa schema PROD</td></tr>
+              <tr><td>Recebimento / GetVendorPayments</td><td><span class="conn-type db">DB</span></td><td>Usa schema PROD</td></tr>
+              <tr><td>Atualizar Pagamento / AtualizarPagamento</td><td><span class="conn-type rest">REST</span></td><td>Envia pagamento ao Thunders PROD</td></tr>
+              <tr><td>Atualizar Recebimento / AtualizarPagamento</td><td><span class="conn-type rest">REST</span></td><td>Envia recebimento ao Thunders PROD</td></tr>
+              <tr><td>UpdatePaymentThunderStatus (×2)</td><td><span class="conn-type db">DB</span></td><td>Atualiza status no SAP B1 PROD</td></tr>
+            </table></div>`,
+            tags:['flow','trigger']
+          },
+        ]
+      },
+      {
+        label: '❌ Cancel (Venda/Compra) — Sem alterações estruturais',
+        tasks: [
+          {
+            id:'fl7',
+            name:'Cancel: confirmar que está ativo em PROD (sem mudanças de lógica)',
+            detail:'Trigger: a cada 1 min. 7 connectors. Os connectors DB já usam schema via parâmetro dinâmico (MRSFNqhdxo). Não há hardcode de HOM. Apenas verificar que o fluxo está ativo e recebendo o schema PROD após a Fase 2.',
+            extra: `<div style="margin-top:8px"><table class="conn-table">
+              <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
+              <tr><td>Canceled Orders / GetCanceledOrders</td><td><span class="conn-type db">DB</span></td><td>schema: via parâmetro dinâmico ✓</td></tr>
+              <tr><td>Update Order Status / UpdateOrderStatus</td><td><span class="conn-type db">DB</span></td><td>schema: via parâmetro dinâmico ✓</td></tr>
+              <tr><td>Canceled Purchase Orders</td><td><span class="conn-type db">DB</span></td><td>schema: via parâmetro dinâmico ✓</td></tr>
+              <tr><td>Update Purchase Status</td><td><span class="conn-type db">DB</span></td><td>schema: via parâmetro dinâmico ✓</td></tr>
+              <tr><td>Cancelar Faturamento (×2) / CancelarFatura</td><td><span class="conn-type rest">REST</span></td><td>Confirmar endpoint Thunders PROD</td></tr>
+            </table></div>`,
+            tags:['flow','done']
+          },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'val',
+    title: 'Fase 4 — Validação e Go Live',
+    sub: 'D-Day · Etapa 4 de 4 · Estimativa: ~60 min · Smoke tests por fluxo',
+    color: '#0F6E56',
+    bg: '#9FE1CB',
+    sections: [
+      {
+        label: 'Smoke tests por fluxo',
+        tasks: [
+          { id:'v1', name:'Smoke test — Auth: forçar execução e confirmar token PROD gerado', detail:'Verificar no Skyone que thunders_accessToken foi atualizado com JWT de produção (audience deve conter domínio PROD, não qa.thunders.com.br).', tags:['val','risk'] },
+          { id:'v2', name:'Smoke test — GetItems: executar e confirmar itens do Thunders PROD recebidos', detail:'Verificar que os itens retornados são do ambiente de produção. Conferir volume vs. HOM.', tags:['val'] },
+          { id:'v3', name:'Smoke test — Companies → PN: criar um PN de teste', detail:'Simular a criação de uma empresa no Thunders e verificar se o Parceiro de Negócios é criado corretamente no SAP B1 PROD.', tags:['val'] },
+          { id:'v4', name:'Smoke test — Conciliation → Pedido: simular uma conciliação', detail:'Verificar criação de Pedido de Venda ou Compra no SAP B1 PROD. Confirmar que U_ALFA_ThundersOrderId está preenchido.', tags:['val','risk'] },
+          { id:'v5', name:'Smoke test — Invoices: verificar geração de NF no Thunders PROD', detail:'Confirmar que U_ALFA_ThundersInvoiceId (T4) está sendo preenchido corretamente após o ciclo de invoice.', tags:['val'] },
+          { id:'v6', name:'Smoke test — Payments: registrar um pagamento de teste', detail:'Validar Vendor ou Incoming payment e confirmar registro no Thunders PROD e status atualizado no SAP B1 PROD.', tags:['val'] },
+          { id:'v7', name:'Smoke test — Cancel: executar cancelamento de teste', detail:'Cancelar um pedido de teste e verificar que o status é atualizado corretamente em ambos os sistemas.', tags:['val'] },
+        ]
+      },
+      {
+        label: 'Validação de banco e logs',
+        tasks: [
+          { id:'v8', name:'Validar gravação em @ALFA_LOGS_THUNDERS', detail:'Confirmar que SP_INSERT_ALFA_LOG está inserindo logs no banco PROD após os smoke tests. SELECT * FROM @ALFA_LOGS_THUNDERS deve retornar registros.', tags:['val','sql'] },
+          { id:'v9', name:'Verificar integridade dos UDFs preenchidos nos documentos', detail:'Abrir documentos criados nos smoke tests no SAP B1 PROD e confirmar que todos os campos U_ALFA_* estão preenchidos corretamente.', tags:['val','db'] },
+        ]
+      },
+      {
+        label: 'Go Live formal',
+        tasks: [
+          { id:'v10', name:'Aprovação formal do cliente BEP (sign-off)', detail:'Colher confirmação escrita do responsável BEP para declarar Go Live concluído. Registrar data/hora de início de produção.', tags:['val','risk'] },
+          { id:'v11', name:'Monitoramento pós Go Live — primeiras 24h', detail:'Acompanhar logs em @ALFA_LOGS_THUNDERS, alertas do Skyone e execução dos 7 fluxos nas primeiras 24h. Triggers: Auth(2h), Companies(10min), Conciliation(2min), Invoices(1min), Payments(1min), Cancel(1min).', tags:['val'] },
+        ]
+      }
+    ]
+  }
+];
+
+// === RENDER ===
+const container = document.getElementById('phases-container');
+
+phases.forEach(ph => {
+  const allTasks = ph.sections.flatMap(s => s.tasks);
+  const phDiv = document.createElement('div');
+  phDiv.className = 'phase';
+  phDiv.id = 'phase-' + ph.id;
+
+  let sectionsHTML = ph.sections.map(sec => {
+    const tasksHTML = sec.tasks.map(t => {
+      const tagsHTML = t.tags.map(tg => `<span class="tag tag-${tg}">${tagLabel(tg)}</span>`).join('');
+      return `
+        <div class="task" id="task-${t.id}">
+          <input type="checkbox" class="task-cb" id="cb-${t.id}" onchange="toggleTask('${ph.id}','${t.id}',this.checked)">
+          <div class="task-body">
+            <div class="task-name" id="tn-${t.id}">${t.name}</div>
+            <div class="task-detail">${t.detail}</div>
+            ${t.extra || ''}
+            <div class="task-tags">${tagsHTML}</div>
+          </div>
+        </div>`;
+    }).join('');
+    return `<div class="section-label">${sec.label}</div>${tasksHTML}`;
+  }).join('');
+
+  phDiv.innerHTML = `
+    <div class="phase-header" id="ph-${ph.id}" onclick="togglePhase('${ph.id}')">
+      <div class="phase-num" style="background:${ph.bg};color:${ph.color}">${phaseNum(ph.id)}</div>
+      <div class="phase-info">
+        <div class="phase-title">${ph.title}</div>
+        <div class="phase-sub">${ph.sub}</div>
+      </div>
+      <div class="phase-right">
+        <div class="phase-stat" id="pstat-${ph.id}">0 / ${allTasks.length}</div>
+        <div class="phase-pbar"><div class="phase-pfill" id="ppfill-${ph.id}" style="width:0%;background:${ph.color}"></div></div>
+        <div class="phase-chevron" id="pchev-${ph.id}">▼</div>
+      </div>
+    </div>
+    <div class="phase-body" id="pbody-${ph.id}">${sectionsHTML}</div>`;
+
+  container.appendChild(phDiv);
+});
+
+function phaseNum(id) {
+  const map = { pre: '●', db: '1', env: '2', flows: '3', val: '4' };
+  return map[id] || '?';
+}
+
+function tagLabel(t) {
+  const m = { sql:'SQL/HANA', env:'Env var', flow:'Fluxo', db:'Banco de dados', val:'Validação', risk:'Ponto de risco', done:'Sem alteração', trigger:'Verificar trigger' };
+  return m[t] || t;
+}
+
+// === THEME ===
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = dark ? '☀ Modo claro' : '☾ Modo escuro';
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = !isDark;
+  applyTheme(next);
+  try { localStorage.setItem('cutover_bep_theme', next ? 'dark' : 'light'); } catch(e) {}
+}
+
+function initTheme() {
+  let saved;
+  try { saved = localStorage.getItem('cutover_bep_theme'); } catch(e) {}
+  if (saved) { applyTheme(saved === 'dark'); return; }
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(prefersDark);
+}
+
+initTheme();
+
+// === STATE ===
+let state = {};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) state = JSON.parse(saved);
+  } catch(e) { state = {}; }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const el = document.getElementById('save-indicator');
+    el.textContent = 'Progresso salvo automaticamente';
+    setTimeout(() => { el.textContent = ''; }, 2000);
+  } catch(e) {}
+}
+
+function resetAll() {
+  if (!confirm('Resetar todo o progresso? Esta ação não pode ser desfeita.')) return;
+  state = {};
+  localStorage.removeItem(STORAGE_KEY);
+  document.querySelectorAll('.task-cb').forEach(cb => { cb.checked = false; });
+  document.querySelectorAll('.task-name').forEach(el => el.classList.remove('struck'));
+  document.querySelectorAll('.task').forEach(el => el.classList.remove('done'));
+  updateAllProgress();
+}
+
+function applyState() {
+  Object.entries(state).forEach(([tid, checked]) => {
+    const cb = document.getElementById('cb-' + tid);
+    const tn = document.getElementById('tn-' + tid);
+    const task = document.getElementById('task-' + tid);
+    if (cb) cb.checked = checked;
+    if (tn) tn.classList.toggle('struck', checked);
+    if (task) task.classList.toggle('done', checked);
+  });
+}
+
+function toggleTask(phId, tId, checked) {
+  state[tId] = checked;
+  const tn = document.getElementById('tn-' + tId);
+  const task = document.getElementById('task-' + tId);
+  if (tn) tn.classList.toggle('struck', checked);
+  if (task) task.classList.toggle('done', checked);
+  updatePhaseProgress(phId);
+  updateGlobalProgress();
+  saveState();
+}
+
+function togglePhase(id) {
+  const body = document.getElementById('pbody-' + id);
+  const header = document.getElementById('ph-' + id);
+  const chev = document.getElementById('pchev-' + id);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
+  chev.classList.toggle('open', !isOpen);
+}
+
+function updatePhaseProgress(phId) {
+  const ph = phases.find(p => p.id === phId);
+  const allTasks = ph.sections.flatMap(s => s.tasks);
+  const done = allTasks.filter(t => state[t.id]).length;
+  const pct = allTasks.length > 0 ? Math.round(done / allTasks.length * 100) : 0;
+  const fill = document.getElementById('ppfill-' + phId);
+  const stat = document.getElementById('pstat-' + phId);
+  if (fill) fill.style.width = pct + '%';
+  if (stat) stat.textContent = done + ' / ' + allTasks.length;
+}
+
+function updateGlobalProgress() {
+  const allTasks = phases.flatMap(p => p.sections.flatMap(s => s.tasks));
+  const total = allTasks.length;
+  const done = allTasks.filter(t => state[t.id]).length;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('m-total').textContent = total;
+  document.getElementById('m-done').textContent = done;
+  document.getElementById('m-pend').textContent = total - done;
+  document.getElementById('m-pct').textContent = pct + '%';
+  document.getElementById('gp-fill').style.width = pct + '%';
+  document.getElementById('gp-label').textContent = done === 0 ? 'Nenhuma tarefa concluída' : done === total ? '✓ Cutover concluído!' : `${done} de ${total} tarefas concluídas (${pct}%)`;
+}
+
+function updateAllProgress() {
+  phases.forEach(ph => updatePhaseProgress(ph.id));
+  updateGlobalProgress();
+}
+
+// === INIT ===
+loadState();
+applyState();
+updateAllProgress();
+// Open first two phases by default
+togglePhase('pre');
+togglePhase('db');
+</script>
+</body>
+</html>
