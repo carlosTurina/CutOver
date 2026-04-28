@@ -210,9 +210,6 @@
     <div class="gp-label" id="gp-label">Nenhuma tarefa concluída</div>
   </div>
 
-  <div class="alert alert-amber">
-    <strong>Data não confirmada.</strong> Distribuir este plano e alinhar janela de indisponibilidade com o cliente BEP com no mínimo 5 dias de antecedência.
-  </div>
   <div class="alert alert-red">
     <strong>Bloqueador crítico:</strong> Confirmar o nome do banco PROD antes de qualquer ação. Toda a Fase 1 e o parâmetro <code>schema</code> dependem disso.
   </div>
@@ -239,9 +236,9 @@ const phases = [
       {
         label: 'Alinhamento',
         tasks: [
-          { id:'pre1', name:'Confirmar data e janela de corte com o cliente BEP', detail:'Definir horário de início, duração estimada (previsto: 3–5h) e lista de participantes do cutover.', tags:['val'] },
+          { id:'pre1', name:'✅ Data confirmada: Go Live segunda-feira — definir horário com o cliente', detail:'Data confirmada. Pendente: alinhar horário de início e duração com o cliente BEP. Prever 3–5h sem sincronização Thunders↔SAP. Confirmar lista de participantes presentes no cutover.', tags:['val','risk'] },
           { id:'pre2', name:'Confirmar nome do banco de PRODUÇÃO no HANA', detail:'Este nome substitui SBO_BEP_HOM em: SP_INSERT_ALFA_LOG, parâmetro schema de todos os 7 fluxos e consultas das @Tables.', tags:['sql','risk'] },
-          { id:'pre2b', name:'Confirmar com consultor funcional o destino dos UDFs T0/T3/T4 nos Docs de Marketing', detail:'Os campos U_ALFA_ThundersModifyAt e U_ALFA_ThundersOrderId estão vinculados a T0 (cabeçalho), T3 e T4 (linhas). Confirmar se T0=OINV/ORDR, T3=RDR1/INV1, T4=outra linha — antes de criar os UDFs no PROD. Tipo: alfanumérico em todos.', tags:['db','risk'] },
+          { id:'pre2b', name:'Confirmar com consultor quais subtipos de Docs de Marketing recebem os UDFs (T0/T3/T4)', detail:'Destino confirmado: Documentos de Marketing, tipo alfanumérico. Pendente: consultor deve informar quais subtabelas correspondem aos aliases T0 (cabeçalho), T3 e T4 (linhas) — ex: OINV, RDR1, INV1. Necessário antes de criar os UDFs no PROD.', tags:['db','risk'] },
           { id:'pre3', name:'Levantar todos os valores das variáveis de PROD com o cliente', detail:'Coletar: client_id PROD, client_secret PROD, CustomerGroup PROD, SupplierGroup PROD. Ver tabela na Fase 2.', tags:['env','risk'] },
         ]
       },
@@ -250,6 +247,9 @@ const phases = [
         tasks: [
           { id:'pre4', name:'Fazer backup completo do ambiente HOM', detail:'Exportar snapshots do banco HANA HOM, IACs dos 7 fluxos e variáveis de ambiente do Skyone.', tags:['risk'] },
           { id:'pre5', name:'Validar acessos ao ambiente PROD (SAP B1 + HANA + Skyone)', detail:'Confirmar permissões DBA no HANA PROD, acesso ao Service Layer SAP B1 PROD e acesso à conta Skyone de produção.', tags:['val'] },
+          { id:'pre5b', name:'Obter credenciais do Extension Manager PROD', detail:'Solicitar ao consultor/TI o PDF de Technical Information do PROD. Na última página: URL de acesso (trocar "ControlCenter" por "ExtensionManager" no final) + usuário e senha. Salvar antes do D-Day.', tags:['val','risk'] },
+          { id:'pre5c', name:'✅ ZIP do Energione pronto para PROD — confirmar localização do arquivo', detail:'Build já gerado e validado. Confirmar caminho do arquivo .zip final antes do D-Day. Padrão de destino no cliente: pasta C:\\Alfa (criar se não existir).', tags:['done'] },
+          { id:'pre5d', name:'Levantar lista dos outros addons com o consultor (quais migram para PROD)', detail:'No SAP HOM: Administração > Add-Ons > Gerenciador de Add-Ons. Listar nome, versão e publisher de cada addon. Definir para cada um: migra? Responsabilidade: Alfa ou consultor? Quais configurações são necessárias?', tags:['risk'] },
           { id:'pre6', name:'Preparar script SP_INSERT_ALFA_LOG com nome do banco PROD', detail:'Substituir todas as 3 ocorrências de "SBO_BEP_HOM" pelo nome PROD confirmado no passo pre2.', tags:['sql'] },
           { id:'pre7', name:'Preparar script FN_REMOVE_SPECIAL_CHARACTER para PROD', detail:'Nenhuma alteração de schema necessária neste objeto — deploy direto. Validar sintaxe HANA PROD.', tags:['sql'] },
           { id:'pre8', name:'Comunicar janela de indisponibilidade ao cliente BEP', detail:'Enviar comunicado formal com data, horário e impacto esperado. Prever 3–5h sem sincronização Thunders↔SAP.', tags:['risk'] },
@@ -372,7 +372,7 @@ const phases = [
   {
     id: 'env',
     title: 'Fase 2 — Variáveis de Ambiente (Skyone)',
-    sub: 'D-Day · Etapa 2 de 4 · Estimativa: ~20 min · Aplica-se a todos os 7 fluxos',
+    sub: 'D-Day · Etapa 2 de 5 · Estimativa: ~20 min · Aplica-se a todos os 7 fluxos',
     color: '#854F0B',
     bg: '#FAC775',
     sections: [
@@ -418,7 +418,7 @@ const phases = [
   {
     id: 'flows',
     title: 'Fase 3 — Fluxos de Integração (Skyone)',
-    sub: 'D-Day · Etapa 3 de 4 · Estimativa: ~60 min · 6 fluxos com mudanças + 1 sem alteração',
+    sub: 'D-Day · Etapa 3 de 5 · Estimativa: ~60 min · 6 fluxos com mudanças + 1 sem alteração',
     color: '#3B6D11',
     bg: '#C0DD97',
     sections: [
@@ -551,9 +551,67 @@ const phases = [
     ]
   },
   {
+    id: 'addon',
+    title: 'Fase 4 — Deploy do Addon (Energione + outros)',
+    sub: 'D-Day · Etapa 4 de 5 · Estimativa: ~45 min · Independente dos fluxos Skyone',
+    color: '#993C1D',
+    bg: '#F0997B',
+    sections: [
+      {
+        label: '🔧 Energione — gerado pela Alfa, deploy via Extension Manager',
+        tasks: [
+          {
+            id:'ad1',
+            name:'Acessar o Extension Manager do ambiente PROD do cliente',
+            detail:'No navegador, dentro do ambiente do cliente: usar URL do Technical Information PROD, substituindo "ControlCenter" por "ExtensionManager" ao final. Fazer login com as credenciais do PDF (última página). Caso caracteres especiais da senha estejam com erro, inserir manualmente.',
+            tags:['risk']
+          },
+          {
+            id:'ad2',
+            name:'Fazer upload do ZIP do Energione no Extension Manager',
+            detail:'Aba Aplicações > Importar > selecionar o arquivo .zip do Energione (já pronto para PROD). Clicar em Upload. Sequência: Next > Next > Next — não alterar nenhuma configuração. Se der erro, o problema é no arquivo de build, não na instalação.',
+            extra: `<div style="margin-top:8px;padding:8px 10px;border-radius:6px;border-left:3px solid var(--amber);background:var(--amber-bg);font-size:12px;color:var(--amber)">
+              <strong>Se der erro na instalação:</strong> verificar conflito de versão. Solução conhecida: deletar o arquivo ARD da pasta do projeto, recriar do zero e refazer o build pelo Extension Package (SAP Business One SDK Tools).
+            </div>`,
+            tags:['risk']
+          },
+          {
+            id:'ad3',
+            name:'Atribuir o addon à base PROD e configurar modo de inicialização',
+            detail:'No Extension Manager: Atribuição de Licença > selecionar a base de PRODUÇÃO > marcar o Energione na lista > definir Inicialização: Manual (Automático sobrecarrega o SAP). Confirmar atribuição.',
+            tags:[]
+          },
+          {
+            id:'ad4',
+            name:'Abrir o SAP B1 PROD e concluir a instalação inicial do Energione',
+            detail:'O SAP reconhece automaticamente o addon atribuído e solicita a instalação na primeira abertura. Confirmar a instalação no gerenciador de add-ons. Esta etapa efetiva a instalação localmente.',
+            tags:['risk']
+          },
+          {
+            id:'ad5',
+            name:'Verificar inicialização das tabelas do Energione',
+            detail:'Na primeira execução o addon verifica e cria suas tabelas no HANA PROD (comportamento do inicializador de tabelas). Confirmar no HANA PROD que as tabelas do Energione foram criadas sem erros antes de liberar o ambiente.',
+            tags:['val','sql']
+          },
+        ]
+      },
+      {
+        label: '📦 Outros addons — responsabilidade a confirmar com consultor',
+        tasks: [
+          {
+            id:'ad6',
+            name:'Executar plano de migração dos outros addons conforme definido com o consultor',
+            detail:'Para cada addon levantado no pré-cutover: se já disponível em PROD (licença ativa), apenas configurar. Se precisar migrar: repetir o processo de upload/atribuição/instalação acima. Dados de configuração específicos: solicitar ao consultor antes do D-Day.',
+            tags:['risk']
+          },
+        ]
+      }
+    ]
+  },
+  {
     id: 'val',
-    title: 'Fase 4 — Validação e Go Live',
-    sub: 'D-Day · Etapa 4 de 4 · Estimativa: ~60 min · Smoke tests por fluxo',
+    title: 'Fase 5 — Validação e Go Live',
+    sub: 'D-Day · Etapa 5 de 5 · Estimativa: ~60 min · Smoke tests por fluxo',
     color: '#0F6E56',
     bg: '#9FE1CB',
     sections: [
@@ -632,7 +690,7 @@ phases.forEach(ph => {
 });
 
 function phaseNum(id) {
-  const map = { pre: '●', db: '1', env: '2', flows: '3', val: '4' };
+  const map = { pre: '●', db: '1', env: '2', flows: '3', addon: '4', val: '5' };
   return map[id] || '?';
 }
 
