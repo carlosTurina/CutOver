@@ -272,8 +272,8 @@ const phases = [
         tasks: [
           {
             id:'db1',
-            name:'Criar os 8 UDFs em Documentos de Marketing (tipo alfanumérico)',
-            detail:'Mapeamento finalizado. Criar no banco PROD todos os campos abaixo em Documentos de Marketing:',
+            name:'✅ UDFs em Documentos de Marketing — Gabriel ficou responsável pela criação via SAP',
+            detail:'Responsabilidade delegada a Gabriel. Campos criados diretamente na tela de Campos Definidos pelo Usuário do SAP B1 PROD, aba Documentos de Marketing, tipo alfanumérico.',
             extra: `<div style="margin-top:8px">
               <table class="conn-table">
                 <tr><th>Campo UDF</th><th>Objeto SAP</th><th>Tipo</th></tr>
@@ -286,7 +286,7 @@ const phases = [
                 <tr><td><span class="task-code">U_ALFA_ThundersOrderId</span></td><td>Linhas de doc (T3)</td><td>Alfanumérico</td></tr>
               </table>
             </div>`,
-            tags:['db']
+            tags:['db','done']
           },
         ]
       },
@@ -407,8 +407,8 @@ const phases = [
         label: 'Atualização das variáveis',
         tasks: [
           { id:'env1', name:'✅ schema → banco PROD atualizado (SBO_BEP_PROD)', detail:'Concluído. Parâmetro ID MRSFNqhdxo atualizado com o nome do banco de produção.', tags:['env','done'] },
-          { id:'env2', name:'⚠️ Thunder_config_client_id — credencial veio incorreta, aguardando substituta', detail:'Parâmetro ID 0Hj-NTrAvq. Client_id recebido está errado. Solicitar o client_id correto de PROD ao responsável Thunders/BEP e atualizar antes do D-Day.', tags:['env','risk'] },
-          { id:'env3', name:'⚠️ thunders_cliente_type (client_secret) — credencial veio incorreta, aguardando substituta', detail:'Parâmetro ID z5Wpy76aGx. Secret recebido está errado. Solicitar o client_secret correto de PROD ao responsável Thunders/BEP e atualizar junto com o client_id.', tags:['env','risk'] },
+          { id:'env2', name:'✅ Thunder_config_client_id — Gabriel validando credencial correta com o Thunders', detail:'Credencial recebida estava incorreta. Gabriel ficou responsável por validar e obter o client_id correto de PROD diretamente com o Thunders. Atualizar parâmetro ID 0Hj-NTrAvq assim que receber.', tags:['env','done'] },
+          { id:'env3', name:'✅ thunders_cliente_type (client_secret) — Gabriel validando credencial correta com o Thunders', detail:'Credencial recebida estava incorreta. Gabriel validando junto ao Thunders. Atualizar parâmetro ID z5Wpy76aGx assim que receber.', tags:['env','done'] },
           { id:'env4', name:'✅ thunders_grant_type confirmado (client_credentials)', detail:'Concluído. Valor igual ao HOM — nenhuma alteração necessária.', tags:['env','done'] },
           { id:'env5', name:'✅ costumergroup → atualizado para PROD', detail:'Concluído. Parâmetro ID t4A8d8m4bt atualizado com o código do grupo de clientes de produção.', tags:['env','done'] },
           { id:'env6', name:'✅ supliergroup → atualizado para PROD', detail:'Concluído. Parâmetro ID Ya1PdN9brx atualizado com o código do grupo de fornecedores de produção.', tags:['env','done'] },
@@ -595,9 +595,15 @@ const phases = [
           },
           {
             id:'ad7',
-            name:'⚠️ Configurações da interface do Energione — pendente (via curl)',
-            detail:'Faltam as configurações setadas diretamente na interface do addon: locais dos templates, configurações de e-mail e demais parâmetros operacionais. Executar o curl criado para agilizar esse processo com os dados fornecidos pelo consultor.',
+            name:'Configurações da interface do Energione via curl — GET em HOM + POST em PROD',
+            detail:'Parâmetros de configuração permanecem os mesmos do HOM. Executar GET na base HOM para coletar os valores e replicar via SL para PROD com o mesmo payload.',
             tags:['risk']
+          },
+          {
+            id:'ad8',
+            name:'✅ Campo de e-mail do addon — consultor se comprometeu a criar amanhã',
+            detail:'Fora do nosso escopo. Consultor assumiu a responsabilidade de criar o campo de e-mail na interface do addon até amanhã.',
+            tags:['done']
           },
         ]
       },
@@ -606,9 +612,9 @@ const phases = [
         tasks: [
           {
             id:'ad6',
-            name:'Executar plano de migração dos outros addons conforme definido com o consultor',
-            detail:'Para cada addon levantado no pré-cutover: se já disponível em PROD (licença ativa), apenas configurar. Se precisar migrar: repetir o processo de upload/atribuição/instalação acima. Dados de configuração específicos: solicitar ao consultor antes do D-Day.',
-            tags:['risk']
+            name:'✅ Addons de terceiros (Invent e outros) — manutenção sob responsabilidade do consultor',
+            detail:'Fora do escopo da Alfa. Addons de terceiros sendo mantidos pelo consultor. Nenhuma ação necessária da nossa parte.',
+            tags:['done']
           },
         ]
       }
@@ -733,9 +739,16 @@ initTheme();
 let state = {};
 
 const defaultChecked = new Set([
-  'env1','env4','env5','env6','env7','env8',
+  // Pré-cutover
+  'pre1','pre2','pre4','pre5','pre5b','pre5c',
+  // Fase 1 - Banco
+  'db1',
+  // Fase 2 - Env vars
+  'env1','env2','env3','env4','env5','env6','env7','env8',
+  // Fase 3 - Fluxos
   'fl1','fl2','fl3','fl4','fl5','fl6','fl7',
-  'ad1','ad2','ad3','ad4','ad5'
+  // Fase 4 - Addon
+  'ad1','ad2','ad3','ad4','ad5','ad6','ad8'
 ]);
 
 function loadState() {
