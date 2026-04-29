@@ -210,6 +210,9 @@
     <div class="gp-label" id="gp-label">Nenhuma tarefa concluída</div>
   </div>
 
+  <div class="alert alert-blue">
+    <strong>Go Live confirmado para segunda-feira.</strong> Horário de início pendente — alinhar com o cliente BEP o quanto antes para definir janela e lista de participantes.
+  </div>
   <div class="alert alert-red">
     <strong>Bloqueador crítico:</strong> Confirmar o nome do banco PROD antes de qualquer ação. Toda a Fase 1 e o parâmetro <code>schema</code> dependem disso.
   </div>
@@ -403,13 +406,13 @@ const phases = [
       {
         label: 'Atualização das variáveis',
         tasks: [
-          { id:'env1', name:'Atualizar schema → nome do banco PROD', detail:'Parâmetro ID MRSFNqhdxo. Usado por todos os connectors database dos 7 fluxos via referência dinâmica.', tags:['env','risk'] },
-          { id:'env2', name:'Atualizar Thunder_config_client_id → client_id PROD', detail:'Parâmetro ID 0Hj-NTrAvq. Substituir "bepqa_alfaerp_8Ts3p" pelo client_id de produção fornecido pelo cliente BEP/Thunders.', tags:['env','risk'] },
-          { id:'env3', name:'Atualizar thunders_cliente_type → client_secret PROD', detail:'Parâmetro ID z5Wpy76aGx. Substituir "vIuX2ldkZRnqw80Q" pelo secret de produção.', tags:['env','risk'] },
-          { id:'env4', name:'Confirmar thunders_grant_type (provavelmente igual)', detail:'Parâmetro ID bnPuFxQLn7. Valor atual: client_credentials. Confirmar que PROD usa o mesmo grant type.', tags:['env'] },
-          { id:'env5', name:'Atualizar costumergroup → grupo de clientes PROD', detail:'Parâmetro ID t4A8d8m4bt. Valor HOM: 108. Confirmar o código correto do grupo de clientes no SAP B1 PROD.', tags:['env'] },
-          { id:'env6', name:'Atualizar supliergroup → grupo de fornecedores PROD', detail:'Parâmetro ID Ya1PdN9brx. Valor HOM: 101. Confirmar o código correto do grupo de fornecedores no SAP B1 PROD.', tags:['env'] },
-          { id:'env7', name:'Atualizar enviroment → "Produção"', detail:'Parâmetro ID FfE6GHdecR. Alterar de "Homologação" para "Produção" para identificação correta nos logs.', tags:['env'] },
+          { id:'env1', name:'✅ schema → banco PROD atualizado (SBO_BEP_PROD)', detail:'Concluído. Parâmetro ID MRSFNqhdxo atualizado com o nome do banco de produção.', tags:['env','done'] },
+          { id:'env2', name:'⚠️ Thunder_config_client_id — credencial veio incorreta, aguardando substituta', detail:'Parâmetro ID 0Hj-NTrAvq. Client_id recebido está errado. Solicitar o client_id correto de PROD ao responsável Thunders/BEP e atualizar antes do D-Day.', tags:['env','risk'] },
+          { id:'env3', name:'⚠️ thunders_cliente_type (client_secret) — credencial veio incorreta, aguardando substituta', detail:'Parâmetro ID z5Wpy76aGx. Secret recebido está errado. Solicitar o client_secret correto de PROD ao responsável Thunders/BEP e atualizar junto com o client_id.', tags:['env','risk'] },
+          { id:'env4', name:'✅ thunders_grant_type confirmado (client_credentials)', detail:'Concluído. Valor igual ao HOM — nenhuma alteração necessária.', tags:['env','done'] },
+          { id:'env5', name:'✅ costumergroup → atualizado para PROD', detail:'Concluído. Parâmetro ID t4A8d8m4bt atualizado com o código do grupo de clientes de produção.', tags:['env','done'] },
+          { id:'env6', name:'✅ supliergroup → atualizado para PROD', detail:'Concluído. Parâmetro ID Ya1PdN9brx atualizado com o código do grupo de fornecedores de produção.', tags:['env','done'] },
+          { id:'env7', name:'✅ enviroment → "Produção" atualizado', detail:'Concluído. Parâmetro ID FfE6GHdecR alterado de "Homologação" para "Produção".', tags:['env','done'] },
           { id:'env8', name:'NÃO atualizar THUNDERS_AcesserToken manualmente', detail:'Este campo (ID byD1Eu-Tpd) é preenchido automaticamente pelo fluxo Auth após a primeira execução em PROD. Não interfira.', tags:['env','done'] },
         ]
       }
@@ -427,8 +430,8 @@ const phases = [
         tasks: [
           {
             id:'fl1',
-            name:'Auth: aplicar mudanças HOM → PROD e validar execução',
-            detail:'Conector: Thunders_Alfa / Login. Usa: Thunder_Config_ClientID + Thunders_Client_Type + Thunders_Grant_Type. Trigger: a cada 2h. Após atualizar as env vars (Fase 2), forçar execução manual e confirmar que access_token PROD é gerado e salvo.',
+            name:'✅ Auth: blocos configurados em PROD — pendente validação após client_id/secret corretos',
+            detail:'Configuração aplicada. Execução bloqueada até client_id e client_secret corretos do Thunders PROD serem recebidos. Após atualizar as env vars (env2/env3), forçar execução manual e confirmar token gerado.',
             extra: `<div style="margin-top:8px"><table class="conn-table">
               <tr><th>Conector</th><th>Tipo</th><th>Parâmetros críticos</th></tr>
               <tr><td>Thunders_Alfa / Login</td><td><span class="conn-type rest">REST</span></td><td><span class="task-code">client_id</span> <span class="task-code">client_secret</span> <span class="task-code">grant_type</span></td></tr>
@@ -442,8 +445,8 @@ const phases = [
         tasks: [
           {
             id:'fl2',
-            name:'GetItems: aplicar mudanças HOM → PROD',
-            detail:'Conector: GetThundersItems. Dependência: Auth deve estar funcionando (token PROD ativo). Verificar trigger de execução e paginação (RegistrosPorPagina: 2000).',
+            name:'✅ GetItems: blocos configurados em PROD',
+            detail:'Concluído. Aguarda Auth funcional (depende de client_id/secret corretos) para validação end-to-end.',
             extra: `<div style="margin-top:8px"><table class="conn-table">
               <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
               <tr><td>GetThundersItems</td><td><span class="conn-type rest">REST</span></td><td>Token via THUNDERS_AcesserToken gerado pelo Auth</td></tr>
@@ -457,8 +460,8 @@ const phases = [
         tasks: [
           {
             id:'fl3',
-            name:'Companies → PN: aplicar mudanças HOM → PROD',
-            detail:'Trigger: a cada 10 min. 14 connectors. Atenção especial à paginação (limitePagina: 50, startRow/endRow dinâmicos) e ao parâmetro VerificarFluxoAndamento (controle de concorrência).',
+            name:'✅ Companies → PN: blocos configurados em PROD',
+            detail:'Concluído. Trigger: a cada 10 min. Aguarda Auth funcional para validação end-to-end.',
             extra: `<div style="margin-top:8px"><table class="conn-table">
               <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
               <tr><td>Verifica se PN Existe / GetBussinesPartner</td><td><span class="conn-type db">DB</span></td><td>Usa schema PROD via parâmetro</td></tr>
@@ -476,8 +479,8 @@ const phases = [
         tasks: [
           {
             id:'fl4',
-            name:'Conciliation → Pedido: aplicar mudanças HOM → PROD',
-            detail:'Trigger: a cada 2 min (fluxo crítico de alta frequência). Cobre Compra/Venda e Serviço. Atenção ao controle de tentativas (Tentativas, TentativasOrder) e ao VerificarFluxoAndamento.',
+            name:'✅ Conciliation → Pedido: blocos configurados em PROD',
+            detail:'Concluído. Trigger: a cada 2 min. Aguarda Auth funcional para validação end-to-end.',
             extra: `<div style="margin-top:8px"><table class="conn-table">
               <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
               <tr><td>Get Config / GetThundersConfig</td><td><span class="conn-type db">DB</span></td><td>Lê @ALFA_THUNDERS_SETUP — deve existir em PROD</td></tr>
@@ -495,8 +498,8 @@ const phases = [
         tasks: [
           {
             id:'fl5',
-            name:'Invoices: aplicar mudanças HOM → PROD',
-            detail:'Trigger: a cada 1 min. 13 connectors. Gera e cancela notas no Thunders. Atenção: os connectors de atualização de NF usam o token via variável de fluxo (access_token), não o parâmetro direto.',
+            name:'✅ Invoices: blocos configurados em PROD',
+            detail:'Concluído. Trigger: a cada 1 min. Aguarda Auth funcional para validação end-to-end.',
             extra: `<div style="margin-top:8px"><table class="conn-table">
               <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
               <tr><td>Canceled Invoices / GetCanceledInvoices</td><td><span class="conn-type db">DB</span></td><td>Usa schema PROD</td></tr>
@@ -515,8 +518,8 @@ const phases = [
         tasks: [
           {
             id:'fl6',
-            name:'Payments: aplicar mudanças HOM → PROD',
-            detail:'Trigger: a cada 1 min. 7 connectors. Cobre Vendor Payments e Incoming Payments para o Thunders.',
+            name:'✅ Payments: blocos configurados em PROD',
+            detail:'Concluído. Trigger: a cada 1 min. Aguarda Auth funcional para validação end-to-end.',
             extra: `<div style="margin-top:8px"><table class="conn-table">
               <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
               <tr><td>Pagamento / GetIncomingPayments</td><td><span class="conn-type db">DB</span></td><td>Usa schema PROD</td></tr>
@@ -534,8 +537,8 @@ const phases = [
         tasks: [
           {
             id:'fl7',
-            name:'Cancel: confirmar que está ativo em PROD (sem mudanças de lógica)',
-            detail:'Trigger: a cada 1 min. 7 connectors. Os connectors DB já usam schema via parâmetro dinâmico (MRSFNqhdxo). Não há hardcode de HOM. Apenas verificar que o fluxo está ativo e recebendo o schema PROD após a Fase 2.',
+            name:'✅ Cancel: blocos configurados em PROD (sem mudanças de lógica)',
+            detail:'Concluído. Schema via parâmetro dinâmico — sem hardcode de HOM. Verificar que está ativo após Fase 2.',
             extra: `<div style="margin-top:8px"><table class="conn-table">
               <tr><th>Conector</th><th>Tipo</th><th>Observação</th></tr>
               <tr><td>Canceled Orders / GetCanceledOrders</td><td><span class="conn-type db">DB</span></td><td>schema: via parâmetro dinâmico ✓</td></tr>
@@ -558,40 +561,43 @@ const phases = [
     bg: '#F0997B',
     sections: [
       {
-        label: '🔧 Energione — gerado pela Alfa, deploy via Extension Manager',
+        label: '🔧 Energione — deploy concluído, configuração de interface pendente',
         tasks: [
           {
             id:'ad1',
-            name:'Acessar o Extension Manager do ambiente PROD do cliente',
-            detail:'No navegador, dentro do ambiente do cliente: usar URL do Technical Information PROD, substituindo "ControlCenter" por "ExtensionManager" ao final. Fazer login com as credenciais do PDF (última página). Caso caracteres especiais da senha estejam com erro, inserir manualmente.',
-            tags:['risk']
+            name:'✅ Acesso ao Extension Manager PROD — concluído',
+            detail:'Credenciais obtidas e acesso ao Extension Manager do ambiente PROD realizado com sucesso.',
+            tags:['done']
           },
           {
             id:'ad2',
-            name:'Fazer upload do ZIP do Energione no Extension Manager',
-            detail:'Aba Aplicações > Importar > selecionar o arquivo .zip do Energione (já pronto para PROD). Clicar em Upload. Sequência: Next > Next > Next — não alterar nenhuma configuração. Se der erro, o problema é no arquivo de build, não na instalação.',
-            extra: `<div style="margin-top:8px;padding:8px 10px;border-radius:6px;border-left:3px solid var(--amber);background:var(--amber-bg);font-size:12px;color:var(--amber)">
-              <strong>Se der erro na instalação:</strong> verificar conflito de versão. Solução conhecida: deletar o arquivo ARD da pasta do projeto, recriar do zero e refazer o build pelo Extension Package (SAP Business One SDK Tools).
-            </div>`,
-            tags:['risk']
+            name:'✅ Upload e instalação do ZIP do Energione — concluído',
+            detail:'Upload via Extension Manager realizado. Sequência Next > Next > Next executada sem erros.',
+            tags:['done']
           },
           {
             id:'ad3',
-            name:'Atribuir o addon à base PROD e configurar modo de inicialização',
-            detail:'No Extension Manager: Atribuição de Licença > selecionar a base de PRODUÇÃO > marcar o Energione na lista > definir Inicialização: Manual (Automático sobrecarrega o SAP). Confirmar atribuição.',
-            tags:[]
+            name:'✅ Atribuição à base PROD e modo de inicialização — concluído',
+            detail:'Addon atribuído à base PROD com inicialização Manual (não Automático, para não sobrecarregar o SAP).',
+            tags:['done']
           },
           {
             id:'ad4',
-            name:'Abrir o SAP B1 PROD e concluir a instalação inicial do Energione',
-            detail:'O SAP reconhece automaticamente o addon atribuído e solicita a instalação na primeira abertura. Confirmar a instalação no gerenciador de add-ons. Esta etapa efetiva a instalação localmente.',
-            tags:['risk']
+            name:'✅ Instalação inicial no SAP B1 PROD — concluída',
+            detail:'SAP reconheceu o addon e instalação foi confirmada no gerenciador de add-ons.',
+            tags:['done']
           },
           {
             id:'ad5',
-            name:'Verificar inicialização das tabelas do Energione',
-            detail:'Na primeira execução o addon verifica e cria suas tabelas no HANA PROD (comportamento do inicializador de tabelas). Confirmar no HANA PROD que as tabelas do Energione foram criadas sem erros antes de liberar o ambiente.',
-            tags:['val','sql']
+            name:'✅ Tabelas do Energione inicializadas no HANA PROD',
+            detail:'Inicializador de tabelas executou na primeira abertura — tabelas criadas e verificadas.',
+            tags:['done','val']
+          },
+          {
+            id:'ad7',
+            name:'⚠️ Configurações da interface do Energione — pendente (via curl)',
+            detail:'Faltam as configurações setadas diretamente na interface do addon: locais dos templates, configurações de e-mail e demais parâmetros operacionais. Executar o curl criado para agilizar esse processo com os dados fornecidos pelo consultor.',
+            tags:['risk']
           },
         ]
       },
@@ -726,11 +732,22 @@ initTheme();
 // === STATE ===
 let state = {};
 
+const defaultChecked = new Set([
+  'env1','env4','env5','env6','env7','env8',
+  'fl1','fl2','fl3','fl4','fl5','fl6','fl7',
+  'ad1','ad2','ad3','ad4','ad5'
+]);
+
 function loadState() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) state = JSON.parse(saved);
-  } catch(e) { state = {}; }
+  let saved = null;
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch(e) {}
+  if (saved) {
+    state = JSON.parse(saved);
+    // apply defaults only for keys not yet in saved state
+    defaultChecked.forEach(id => { if (!(id in state)) state[id] = true; });
+  } else {
+    defaultChecked.forEach(id => { state[id] = true; });
+  }
 }
 
 function saveState() {
